@@ -1,0 +1,459 @@
+class View {
+  //y = 254, x = 510
+  static int goal;
+
+  method int menu(){
+    var int mode, key, cx, cy, i;
+    let goal = 50;
+    let key = 0;
+    let mode = 1;
+    let cx = 190;
+    let cy = 45;
+    do Output.moveCursor(2,22);
+    do Output.printString("Welcome to Snake!");
+    do Output.moveCursor(4,22);
+    do Output.printString("    Classic Mode");
+    do Output.moveCursor(6,22);
+    do Output.printString("    Duel Mode");
+    do Output.moveCursor(8,22);
+    do Output.printString("    Play with PC");
+    do Output.moveCursor(10,22);
+    do Output.printString("    Chaos mode");
+    do Output.moveCursor(12,22);
+    do Output.printString("    Exit Game");
+    do Screen.setColor(true);
+    do Screen.drawRectangle(cx, cy, cx+8, cy+8);
+    do Sys.wait(1000);
+    while(~(key = 128)){
+      let key = 0;
+      let i = 0;
+      while(i < 10){
+        do Sys.wait(30);
+        let key = Keyboard.keyPressed();
+        if(~(key = 0)){
+          let i = 10;
+        }
+        let i = i + 1;
+      }
+      
+      if((key = 131) & (mode > 1)){   
+        let mode = mode -1;
+        do Screen.setColor(false);
+        do Screen.drawRectangle(cx, cy, cx+8, cy+8);
+        let cy = cy - 23;
+        do Screen.setColor(true);
+        do Screen.drawRectangle(cx, cy, cx+8, cy+8);
+      }
+      if((key = 133) & (mode < 5)){
+        let mode = mode +1;
+        do Screen.setColor(false);
+        do Screen.drawRectangle(cx, cy, cx+8, cy+8);
+        let cy = cy + 23;
+        do Screen.setColor(true);
+        do Screen.drawRectangle(cx, cy, cx+8, cy+8);
+      }   
+    }
+    do Screen.clearScreen();
+    return mode;
+  }
+
+method void clearMsg(){
+    do Screen.setColor(false);
+    do Screen.drawRectangle(0, 232, 510, 254);
+    return;
+}
+
+method void updateScoreMsg(int score){
+    do clearMsg();
+    do Output.moveCursor(21,0);
+    do Output.printString("Score: ");
+    do Output.printInt(score);
+    return;
+}
+method void updateDuelScoreMsg(int score1, int score2){
+    do clearMsg();
+    do Output.moveCursor(21,0);
+    do Output.printString("P1 Score: ");
+    do Output.printInt(score1);
+    do Output.println();
+    do Output.printString("P2 Score: ");
+    do Output.printInt(score2);
+    return;
+}
+
+method void start(int mode) {
+    do Screen.setColor(true);
+    do Screen.drawRectangle(0, 230, 510, 231);
+    do Output.moveCursor(21,0);
+    if(mode = 1){
+      do Output.printString("Get ");
+      do Output.printInt(goal);
+      do Output.printString(" score to WIN !");
+      do Output.println();
+    }
+    if(mode = 2){
+      do Output.printString("P1: 1st snake, use arrow.  P2: 2nd snake, use WASD.");
+      do Output.println();
+      do Output.printString("Get ");
+      do Output.printInt(goal);
+      do Output.printString(" score to WIN !  ");
+    }
+    if(mode = 3){
+      do Output.printString("You are 1st snake, use arrow. ");
+      do Output.println();
+      do Output.printString("Get ");
+      do Output.printInt(goal);
+      do Output.printString(" score to WIN !  ");
+    }
+    if(mode = 4){
+      do Output.printString("You are 1st snake, use arrow. ");
+      do Output.println();
+      do Output.printString("Try to survive !  ");
+    }
+    do Sys.wait(1000);
+    do Output.printString("3..");
+    do Sys.wait(1000);
+    do Output.printString("2..");
+    do Sys.wait(1000);
+    do Output.printString("1..");
+    do Sys.wait(1000);
+    do Output.printString("Go!");
+    do Sys.wait(1000);
+    do clearMsg();
+    return;
+}
+
+method void classic(){
+    var int i;
+    var Snake snake;
+    var int key, speed, nxtDir;
+    var Square bait;
+    let snake = Snake.init(0);
+    let speed = 1000;
+    let nxtDir = 4;
+    do start(1);
+    do updateScoreMsg(snake.len() - 5);
+    let bait = snake.newBait();
+
+    while(~(snake.isDead()) & ~((snake.len() - 5) = goal)){
+      if(snake.getBait(bait)){
+        do snake.longer(bait);
+        do updateScoreMsg(snake.len() - 5);
+        let bait = snake.newBait();
+      }else{
+        do snake.move();
+      }
+      let i = 0;
+      while(i < speed){//agellity
+        do Sys.wait(50);
+        let key = Keyboard.keyPressed();
+        if ((key = 132) & ~(snake.dir() = 2)) {let nxtDir = 4;}
+        if ((key = 130) & ~(snake.dir() = 4)) {let nxtDir = 2;}
+        if ((key = 131) & ~(snake.dir() = 3)) {let nxtDir = 1;}
+        if ((key = 133) & ~(snake.dir() = 1)) {let nxtDir = 3;}  
+        let i = i + 100;
+      }
+      do snake.turn(nxtDir);
+      do snake.checkBoundary();
+      do snake.checkSelf();
+    }
+    if(snake.isDead()){
+      do Output.printString("    Game Over!");
+    }
+    else{
+      do Output.printString("    You Win!");
+    }
+    do Output.println();
+    do Output.printString("   Press any button to continue...");
+    do Sys.wait(1000);
+    let key = 0;
+    while(key = 0){
+        let key = Keyboard.keyPressed();
+    }
+    do snake.dispose();
+    do bait.dispose();
+    do Screen.clearScreen();
+    return;
+}
+
+method void duel(){
+    var int i;
+    var Snake snake1, snake2;
+    var Array snakes;
+    var SnakeAI AI;
+    var int dir1, key1;
+    var int dir2, key2, speed;
+    var Square bait;
+    var String result1, result2;
+    let AI = SnakeAI.init();
+    let snake1 = AI.newSnake(0);
+    let snake2 = AI.newSnake(22);
+    let snakes = Array.new(2);     
+    let speed = 1000;
+    let dir1 = 4;
+    let dir2 = 4;
+    
+    do start(2);
+    do updateDuelScoreMsg(snake1.len() - 5, snake2.len() - 5);
+    let bait = AI.newBait();
+
+    while(~(snake1.isDead()) & ~((snake1.len() - 5) = goal) & ~(snake2.isDead()) & ~((snake2.len() - 5) = goal)){
+      if(snake1.getBait(bait)){
+        do AI.longerSnake(bait, snake1);
+        do updateDuelScoreMsg(snake1.len() - 5, snake2.len() - 5);
+        let bait = AI.newBait();
+      }else{ do AI.moveSnake(snake1); }
+      if(snake2.getBait(bait)){
+        do AI.longerSnake(bait, snake2);
+        do updateDuelScoreMsg(snake1.len() - 5, snake2.len() - 5);
+        let bait = AI.newBait();
+      }else{ do AI.moveSnake(snake2); }
+
+      let i = 0;
+      while(i < speed){//agellity
+        do Sys.wait(10);
+        let key1 = Keyboard.keyPressed();
+        if ((key1 = 132) & ~(dir1 = 2)) {let dir1 = 4;}
+        if ((key1 = 130) & ~(dir1 = 4)) {let dir1 = 2;}
+        if ((key1 = 131) & ~(dir1 = 3)) {let dir1 = 1;}
+        if ((key1 = 133) & ~(dir1 = 1)) {let dir1 = 3;} 
+        do Sys.wait(10);
+        let key2 = Keyboard.keyPressed();
+        if ((key2 = 68) & ~(dir2 = 2)) {let dir2 = 4;}//D = 68, d = 100
+        if ((key2 = 65) & ~(dir2 = 4)) {let dir2 = 2;}//A = 65, a = 97
+        if ((key2 = 87) & ~(dir2 = 3)) {let dir2 = 1;}//W = 87, w = 119
+        if ((key2 = 83) & ~(dir2 = 1)) {let dir2 = 3;}//S = 83, s = 115
+         
+        let i = i + 200;
+      }
+
+      do snake1.turn(dir1);
+      do snake2.turn(dir2);
+      do snake1.checkBoundary();
+      do snake1.checkSelf();
+      do snake1.checkOtherSnake(snake2);
+      do snake2.checkBoundary();
+      do snake2.checkSelf();
+      do snake2.checkOtherSnake(snake1);
+    }
+    if(snake1.isDead() & snake2.isDead()){
+      let result1 = "You Both Lose!";
+      let result2 = "You Both Lose!";
+    }
+    else{
+      if (snake1.isDead() | ((snake2.len() - 5) = goal)){
+        let result1 = "You Lose!";
+        let result2 = "You Win!";
+      }
+      else{
+        let result1 = "You Win!";
+        let result2 = "You Lose!";
+      }
+    }
+    do Output.moveCursor(21,15);
+    do Output.printString(result1);
+    do Output.moveCursor(22,15);
+    do Output.printString(result2);
+    do Output.printString("     Press any button to continue...");
+    do Sys.wait(1000);
+    let key1 = 0;
+    while(key1 = 0){
+        let key1 = Keyboard.keyPressed();
+    }
+    do snake1.dispose();
+    do snake2.dispose();
+    do AI.dispose();
+    do bait.dispose();
+    do Screen.clearScreen();
+    return;
+}
+
+method void auto(){
+    var int i;
+    var Snake snake1, snake2;
+    var int dir1, dir2, key, speed;
+    var Square bait;
+    var SnakeAI AI;
+    var String result1, result2;
+    let AI = SnakeAI.init();
+    let snake1 = AI.newSnake(0);
+    let snake2 = AI.newSnake(22);
+    let speed = 1000;
+    let dir1 = 4;
+    let dir2 = 4;
+
+    do start(3);
+    do updateDuelScoreMsg(snake1.len() - 5, snake2.len() - 5);
+    let bait = AI.newBait();
+
+    while(~(snake1.isDead()) & ~((snake1.len() - 5) = goal)& ~(snake2.isDead()) & ~((snake2.len() - 5) = goal)){
+      if(snake1.getBait(bait)){
+        do AI.longerSnake(bait, snake1);
+        do updateDuelScoreMsg(snake1.len() - 5, snake2.len() - 5);
+        let bait = AI.newBait();//->random bait
+      }else{ do AI.moveSnake(snake1); }
+      if(snake2.getBait(bait)){
+        do AI.longerSnake(bait, snake2);
+        do updateDuelScoreMsg(snake1.len() - 5, snake2.len() - 5);
+        let bait = AI.newBait();//->random bait
+      }else{ do AI.moveSnake(snake2); }
+      
+      let i = 0;
+      while(i < speed){
+        let key = Keyboard.keyPressed();
+        if ((key = 132) & ~(dir1 = 2)) {let dir1 = 4;}
+        if ((key = 130) & ~(dir1 = 4)) {let dir1 = 2;}
+        if ((key = 131) & ~(dir1 = 3)) {let dir1 = 1;}
+        if ((key = 133) & ~(dir1 = 1)) {let dir1 = 3;} 
+        do Sys.wait(20);
+        let i = i + 100;
+      }
+      let dir2 = AI.randDir(bait, snake2);
+      do snake1.turn(dir1);
+      do snake2.turn(dir2);
+      do snake1.checkBoundary();
+      do snake1.checkSelf();
+      do snake1.checkOtherSnake(snake2);
+      do snake2.checkBoundary();
+      do snake2.checkSelf();
+      do snake2.checkOtherSnake(snake1);
+
+    }
+    if(snake1.isDead() & snake2.isDead()){
+      let result1 = "You Both Lose!";
+      let result2 = "You Both Lose!";
+    }
+    else{
+      if (snake1.isDead() | ((snake2.len() - 5) = goal)){
+        let result1 = "You Lose!";
+        let result2 = "You Win!";
+      }
+      else{
+        let result1 = "You Win!";
+        let result2 = "You Lose!";
+      }
+    }
+    do Output.moveCursor(21,15);
+    do Output.printString(result1);
+    do Output.moveCursor(22,15);
+    do Output.printString(result2);
+    do Output.printString("     Press any button to continue...");
+    do Sys.wait(1000);
+    let key = 0;
+    while(key = 0){
+        let key = Keyboard.keyPressed();
+    }
+    do snake1.dispose();
+    do snake2.dispose();
+    do AI.dispose();
+    do bait.dispose();
+    do Screen.clearScreen();
+    return;
+}
+
+method void chaos(){
+    var int i, j;
+    var Array snakes, dir;
+    var int dir1, dir2, key, speed;
+    var Square bait;
+    var SnakeAI AI;
+    var Snake target;
+    var Boolean surviver, you;
+    let AI = SnakeAI.init();
+    let snakes = Array.new(4);
+    let dir = Array.new(4);
+
+    let i = 0;
+    while(i < 4){
+      let snakes[i] = AI.newSnake(5*i);
+      let dir[i] = 4;
+      let i = i + 1;
+    }
+    let speed = 1000;
+    let surviver = true;
+    let you = true;
+
+
+    do start(4);
+    let bait = AI.newBait();
+    while(you & surviver){
+      let i = 0;
+      while(i < 4){
+        let target = snakes[i];
+        if(~(target.isDead())){
+          if(target.getBait(bait)){
+            do AI.longerSnake(bait, target);
+            let bait = AI.newBait();
+          }else{ do AI.moveSnake(target); }
+        }
+        let i = i +1;
+      }
+      let i = 0;
+      while(i < speed){
+        let key = Keyboard.keyPressed();
+        if ((key = 132) & ~(dir[0] = 2)) {let dir[0] = 4;}
+        if ((key = 130) & ~(dir[0] = 4)) {let dir[0] = 2;}
+        if ((key = 131) & ~(dir[0] = 3)) {let dir[0] = 1;}
+        if ((key = 133) & ~(dir[0] = 1)) {let dir[0] = 3;} 
+        do Sys.wait(2);
+        let i = i + 100;
+      }
+      let target = snakes[0];
+      do target.turn(dir[0]);
+      let i = 1;
+      while(i < 4){
+        let target = snakes[i];
+        let dir[i] = AI.randDir(bait, target);
+        do target.turn(dir[i]);
+        let i = i + 1;
+      }
+      let i = 0;
+      while(i < 4){
+        let target = snakes[i];
+        do target.checkBoundary();
+        do target.checkSelf();
+        let j = 0;
+        while(j < 4){
+          if(~(i = j)){
+            do target.checkOtherSnake(snakes[j]);
+          }
+          let j = j + 1;
+        }        
+        let i = i + 1;
+      }
+      let i = 1;
+      let surviver = false;
+      while(i < 4){
+        let target = snakes[i];
+        let surviver = surviver | (~target.isDead());
+        let i = i +1;
+      }
+      let target = snakes[0];
+      let you = ~target.isDead();
+    }
+    if(you){
+      do Output.printString("You Win!");
+    }
+    else{
+      do Output.printString("Game Over! You Lose!");
+    }
+    do Output.println();
+    do Output.printString("   Press any button to continue...");
+    do Sys.wait(1000);
+    let key = 0;
+    while(key = 0){
+        let key = Keyboard.keyPressed();
+    }
+    let i = 0;
+    do AI.dispose();
+    do bait.dispose();
+    while(i < 4){
+      let target = snakes[i];
+      do target.dispose();
+      let i = i +1;
+    } 
+    do Screen.clearScreen();
+    return;
+}
+
+}

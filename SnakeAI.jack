@@ -1,0 +1,203 @@
+class SnakeAI{
+    field Array map;
+    constructor SnakeAI init(){//51 x 23
+        var int i, j;
+        var Array col;
+        var Boolean bound;
+        let map = Array.new(53);
+        let i = 0;
+        while (i < 53) {
+            let map[i] = Array.new(25);
+            let col = map[i];
+            let j = 0;
+            while (j < 25){
+                if((i = 0) | (j = 0) | (i = 52) | (j = 24)){
+                    let bound = true;
+                }else {let bound = false;}
+                let col[j] = bound;
+                let j = j + 1;
+            }        
+            let i = i + 1;
+        }
+        return this;
+    }
+
+    // method void initialize(Array snakes, int n){
+    //     var Square body;
+    //     var Snake snake;
+    //     var int i, j;
+    //     let i = 0;        
+    //     while(i < n){
+    //         let snake = snakes[i];
+    //         let j = 0;
+    //         while(j < snake.len()){
+    //             let body = snake[j];
+    //             do pokeMap(body.x(), body.y());
+    //             let j = j + 1;
+    //         }
+    //         let i = i + 1;
+    //     }
+    //     return;
+    // }
+
+    method void dispose(){
+        var int i;
+        var Array col;
+        let i = 0;
+        while (i < 53) {
+            let col = map[i];
+            do col.dispose();
+            let i = i + 1;
+        }
+        do map.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method Boolean peepMap(int x, int y){
+        var Array col;
+        if((x < -1) | (y < -1) | (x > 52) | (y > 24)){
+            return true;
+        }
+        let col = map[x+1];
+        return col[y+1];
+    }
+    method Boolean peepForward(Snake snake, int dir){
+        var int x, y;
+        let x = snake.x();
+        let y = snake.y();
+        if (dir = 4) {let x = x + 1;}//r
+        if (dir = 2) {let x = x - 1;}//l
+        if (dir = 1) {let y = y - 1;}//u
+        if (dir = 3) {let y = y + 1;}//d
+
+        return peepMap(x, y);
+    }
+    method void pokeMap(int x, int y){
+        var Array col;
+        let col = map[x+1];
+        let col[y+1] = ~(col[y+1]);
+        return;
+    }
+
+    method void printMap() {
+        var int i, j;
+        var Array col;
+        var Boolean ele;
+        let i = 0;
+        while (i < 10) {
+            let col = map[i];
+            let j = 0;
+            while (j < 25){
+                if (col[j]){
+                do Output.printString("1 ");
+                }
+                else{
+                do Output.printString("0 ");
+
+                }
+                let j = j + 1;
+            }        
+            do Output.println();
+            let i = i + 1;
+        }
+        return;
+    }
+
+    method Snake newSnake(int loc) {
+        var Snake snake;
+        var int i;
+        let snake = Snake.init(loc);
+        let i = 0;
+        while (i < 5) {
+            do pokeMap(5 - i - 1 , loc);
+            let i = i + 1;
+        }
+        return snake;
+    }
+
+
+    method void moveSnake(Snake snake) {
+        var Square body;
+        var Array bodys;
+        let bodys = snake.self();
+        let body = bodys[snake.len() - 1];
+        do pokeMap(body.x() , body.y());
+        do snake.move();
+        do pokeMap(snake.x() , snake.y());
+        return;
+    }
+
+
+    method void longerSnake(Square bait, Snake snake){
+        do snake.longer(bait);
+        do pokeMap(bait.x() , bait.y());
+        return;
+    }
+
+    method int randDir(Square bait, Snake snake){
+        var int factor, nextDir, dir, miss;
+        var Boolean peep;
+        let dir = snake.dir();
+        let nextDir = dir;
+        if((dir = 2)|(dir = 4)){
+            if(bait.y() = snake.y()){
+                if(((dir = 2) & (bait.x() > snake.x()))
+                | ((dir = 4) & (bait.x() < snake.x()))){
+                    let factor = Rand.randRange(1000);
+                    if(factor < 500){let nextDir = 1;}
+                    if(factor > 500){let nextDir = 3;}
+                }
+            }
+            if(bait.y() < snake.y()){ let nextDir = 1; }
+            if(bait.y() > snake.y()){ let nextDir = 3; }
+        }
+        if((dir = 1)|(dir = 3)){
+            if(bait.x() = snake.x()){
+                if(((dir = 1) & (bait.y() > snake.y()) )
+                | ((dir = 3) & (bait.y() < snake.y()))){
+                    let factor = Rand.randRange(1000);
+                    if(factor < 500){let nextDir = 2;}
+                    if(factor > 500){let nextDir = 4;}
+                }
+            }
+            if(bait.x() < snake.x()){ let nextDir = 2; }
+            if(bait.x() > snake.x()){ let nextDir = 4; }
+        }
+        let factor = Rand.randRange(1000);
+        if(factor > 400){ let nextDir = dir; }
+
+        let peep = peepForward(snake, nextDir);
+        while(peep)
+        {
+            let factor = Rand.randRange(1000);
+            if(factor < 200){let nextDir = dir - 1;}
+            if((factor > 100) & (factor < 400)){let nextDir = dir + 1;}
+            if(nextDir < 1){let nextDir = nextDir + 4;}
+            if(nextDir > 4){let nextDir = nextDir - 4;}
+            let peep = peepForward(snake, nextDir);
+            let miss = Rand.randRange(1000);
+            if(miss < 50){let peep = false;}
+            if(peepForward(snake, 1)&peepForward(snake, 2)&peepForward(snake, 3)&peepForward(snake, 4)){
+                let peep = false;
+            }
+        } 
+        return nextDir;
+    }
+
+    method Square newBait(){
+        var int randX, randY, x, y, i;
+        var Boolean isSnake;
+        var Square body, bait;
+        let isSnake = true;
+        while(isSnake){
+            let randX = Rand.randRange(50);
+            let randY = Rand.randRange(22);
+            let isSnake = peepMap(randX, randY);
+        }
+        let bait = Square.new(randX, randY);
+        do Screen.setColor(false);
+        do Screen.drawRectangle(randX*10 + 2, randY*10 + 2, randX*10 + 10 - 4, randY*10 + 10 - 4);
+        return bait;
+    }
+}

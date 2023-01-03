@@ -1,0 +1,229 @@
+class Snake{
+///init snake: len = 5, dir = 4, head x = 5, y = loc
+    field int x, y, len, dir;
+    field Boolean dead;
+    field Array self;
+    constructor Snake init(int loc) {
+        var int i;
+        let dir = 4;
+        let x = 4;
+        let y = loc;
+        let len = 5;
+        let dead = false;
+        let self = Array.new(len);
+        let i = 0;
+        while (i < len) {
+            let self[i] = Square.new(x - i, loc);//size = 10
+            let i = i + 1;
+        }
+        return this;
+    }
+    
+    method void dispose(){
+        var int i;
+        var Square body;
+        let i = 0;
+        while(i < len){
+            let body = self[i];
+            do body.dispose();
+            let i = i + 1;
+        }
+        do self.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+    method int x(){ return x; }
+    method int y(){ return y; }
+    method int len(){ return len; }
+    method int dir(){ return dir; }
+    method Boolean isDead(){ return dead; }
+    method Array self(){ return self;}
+    method void turn(int nxtDir){
+        let dir = nxtDir;
+        return;
+    }
+
+    method void move() {
+        var int i;
+        var Square tail;
+        let tail = self[len - 1];
+        do tail.dispose();
+        let i = len - 1;
+        while (i > 0) {
+            let self[i] = self[i-1];
+            let i = i - 1;
+        }        
+        if (dir = 4) {let x = x + 1;}//r
+        if (dir = 2) {let x = x - 1;}//l
+        if (dir = 1) {let y = y - 1;}//u
+        if (dir = 3) {let y = y + 1;}//d
+        let self[0] = Square.new(x, y);
+        return;
+    }
+
+    method void longer(Square bait){
+        var Array newSnake;
+        var int i;        
+        let newSnake = Array.new(len + 1);
+        do bait.draw();
+        let newSnake[0] = bait;
+        let i = 0;
+        while(i < len){
+            let newSnake[i + 1] = self[i];
+            let i = i + 1;
+        }
+        do self.dispose();
+        let self = newSnake;
+        let x = bait.x();
+        let y = bait.y();
+        let len = len + 1;
+        return;
+    }
+
+    method Boolean getBait(Square bait){
+        var int baitX, baitY;
+        let baitX = bait.x();
+        let baitY = bait.y();
+        if(dir = 4){
+            let baitX = baitX - 1;
+        }
+        if(dir = 2){
+            let baitX = baitX + 1;
+        }
+        if(dir = 1){
+            let baitY = baitY + 1;
+        }
+        if(dir = 3){
+            let baitY = baitY - 1;
+        }
+
+        if((baitX = x) & (baitY = y)){
+            return true;
+        }
+        return false;
+    }
+    /**r=1 l=2 u=3 d=4*/
+    method Boolean checkBoundary(){//y = 254, x = 510
+        if((dir = 4) & (x = 50)){
+            let dead = true;
+        }
+        if((dir = 2) & (x = 0)){
+            let dead = true;
+        }
+        if((dir = 1) & (y = 0)){
+            let dead = true;
+        }
+        if((dir = 3) & (y = 22)){
+            let dead = true;
+        }
+        return dead;
+    }
+
+    method Boolean checkSelf(){
+        var Square body;
+        var int i;
+        let i = 1;
+        while(i < len){
+            let body = self[i];
+            if((dir = 4) & ((x + 1) = body.x()) & (y = body.y())){//r
+                let dead = true;
+            }
+            if((dir = 2) & ((x - 1) = body.x()) & (y = body.y())){//l
+                let dead = true;
+            }
+            if((dir = 1) & ((y - 1) = body.y()) & (x = body.x())){//u
+                let dead = true;
+            }
+            if((dir = 3) & ((y + 1) = body.y()) & (x = body.x())){//d
+                let dead = true;
+            }      
+            let i = i + 1;      
+        }
+        return dead;
+    }   
+
+    method Boolean checkOtherSnake(Snake other){
+        var Square body;
+        var Array snake;
+        var int bodyX, bodyY, i;
+        //head dead
+        //get next position of snake2's head
+        let bodyX = other.x();
+        let bodyY = other.y();
+        if((other.dir() = 4)){//r
+            let bodyX = bodyX + 1;
+        }
+        if((other.dir() = 2)){//l
+            let bodyX = bodyX - 1;
+        }
+        if((other.dir() = 1)){//u
+            let bodyY = bodyY - 1;
+        }
+        if((other.dir() = 3)){//d
+            let bodyY = bodyY + 1;
+        }      
+        //check
+        if((dir = 4) & ((x + 1) = bodyX) & (y = bodyY)){//r
+            let dead = true;
+        }
+        if((dir = 2) & ((x - 1) = bodyX) & (y = bodyY)){//l
+            let dead = true;
+        }
+        if((dir = 1) & ((y - 1) = bodyY) & (x = bodyX)){//u
+            let dead = true;
+        }
+        if((dir = 3) & ((y + 1) = bodyY) & (x = bodyX)){//d
+            let dead = true;
+        }      
+        //body
+        //do not check tail
+        let snake = other.self();
+        let i = 1;
+        while(i < (other.len()-1)){
+            let body = snake[i];
+            let bodyX = body.x();
+            let bodyY = body.y();
+            if((dir = 4) & ((x + 1) = bodyX) & (y = bodyY)){//r
+                let dead = true;
+            }
+            if((dir = 2) & ((x - 1) = bodyX) & (y = bodyY)){//l
+                let dead = true;
+            }
+            if((dir = 1) & ((y - 1) = bodyY) & (x = bodyX)){//u
+                let dead = true;
+            }
+            if((dir = 3) & ((y + 1) = bodyY) & (x = bodyX)){//d
+                let dead = true;
+            }      
+            let i = i + 1;      
+        }
+
+        return dead;
+    }   
+
+    method Square newBait(){
+        var int randX, randY, i;
+        var Boolean isSnake;
+        var Square body, bait;
+        let isSnake = true;
+        while(isSnake){
+            let randX = Rand.randRange(50);
+            let randY = Rand.randRange(22);
+            let isSnake = false;
+            let i = 0;
+            while(i < len){
+                let body = self[i];
+                if((randX = body.x()) & (randY = body.y())){
+                let isSnake = true;
+                }
+                let i = i + 1;
+            }
+        }
+
+        let bait = Square.new(randX, randY);
+        do Screen.setColor(false);
+        do Screen.drawRectangle(randX*10 + 2, randY*10 + 2, randX*10 + 10 - 4, randY*10 + 10 - 4);
+        return bait;
+   }
+
+}
